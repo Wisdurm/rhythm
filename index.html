@@ -17,24 +17,62 @@
             color: white;
             box-shadow: 0px 0px 5px 1px rgba(255,255,255,0.25);
         }
-        a{
-            text-shadow: #ffcc00 0 0 7px;
-        }
+		.control {
+			background-color: grey;
+			width: 25%;
+			height: 100%;
+			font-size: 2.5rem;
+			
+		}
+		row {
+			position: absolute;
+			width: 0;
+			height: 0;
+		}
+        img {
+			width: 100%;
+			float: left;
+			animation-name: move;
+			animation-duration: 3s;
+			animation-timing-function: linear;
+			top: 100%;
+		}
+		@keyframes move {
+			from {
+				top: 0%;
+			}
+
+			to {
+				top: 100%;
+			}
+		}
 	</style>
 </head>
 <body onload="fitText(document.getElementById('infobox')); fitText(document.getElementById('buttonReal'), 0.2)">
     <div style="justify-content: center; display: flex; border: 1px solid snow; border-radius: 5%; background-color:rgba(0,0,0,0.5);box-shadow: 0px 0px 20px 5px rgba(255,255,255,0.5); width: 50%; aspect-ratio: 250/170;">
         <div id="game" style="width: 40%;height: 100%; text-align: center; position: relative;">
             <div id="nuotit" style="height: 80%; display: flex;">
-            <!-- Nuotit lisätään automaattisesti -->
-                <div style="width: 25%; height: 100%; position: relative;" id="row0"></div>
-                <div style="width: 25%; height: 100%; position: relative;" id="row1"></div>
-                <div style="width: 25%; height: 100%; position: relative;" id="row2"></div>
-                <div style="width: 25%; height: 100%; position: relative;" id="row3"></div>
+				<!-- Nuotit lisätään automaattisesti -->
+				<div style="width: 25%; height: 100%; position: relative;">
+					<div class="row" id="row0">
+					</div>
+				</div>
+				<div style="width: 25%; height: 100%; position: relative;">
+					<div class="row" id="row1">
+					</div>
+				</div>
+				<div style="width: 25%; height: 100%; position: relative;">
+					<div class="row" id="row2">
+					</div>
+				</div>
+				<div style="width: 25%; height: 100%; position: relative;">
+					<div class="row" id="row3">
+					</div>
+				</div>
             </div>
             <div style="height: 20%; width: 100%; position: relative;">
                 <div id="ohjaimet" style="height: 50%; width: 100%; bottom: 20%; position: absolute;">
-                <!-- Napit lisätään automaattisesti -->
+					<button class="control" id="0">1</button><button class="control" id="1">2</button><button class="control" id="2">3</button><button class="control" id="3">4</button>
                 </div>
             </div>
         </div>
@@ -50,13 +88,13 @@
                 </span>
             </span>
 			<span>
-                Combo: 
-                <span id="combo"">
+                Combo:
+                <span id="combo">
                 </span>
             </span>
             <span>
                 Rank: 
-                <span id="rank"">
+                <span id="rank">
                 </span>
             </span>
             <span>
@@ -71,11 +109,11 @@
 				<label for="pitch">Pitch</label>
 				<input type="range" name="pitch" id="pitch" value="0" min="-5" max="5" step="1">
 				<br>
-				<button onclick="Setup()" style="font-size: 2rem;" id="buttonReal">Start</button>
+				<button onclick="start()" style="font-size: 2rem;" id="buttonReal">Start</button>
 			</div>
 		</div>
     </div>
 	<!-- Bruh :D -->
-    <script src="https://wisdurm.fi/static/fittext.js"></script>
+    <script src="./fittext.js"></script>
 	<script src="main.js" charset="utf-8"></script>
 </body>
