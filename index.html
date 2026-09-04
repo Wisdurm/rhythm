@@ -17,26 +17,41 @@
             color: white;
             box-shadow: 0px 0px 5px 1px rgba(255,255,255,0.25);
         }
+		
+		.controls {
+			height: 70%;
+			width: 100%;
+			top: 0;
+			position: absolute;
+		}
 		.control {
 			background-color: grey;
 			width: 25%;
 			height: 100%;
 			font-size: 2.5rem;
-			
 		}
-		row {
-			position: absolute;
-			width: 0;
-			height: 0;
-		}
+	
         img {
+			opacity: 100% !important;
 			width: 100%;
-			float: left;
+			position: absolute;
 			animation-name: move;
-			animation-duration: 3s;
 			animation-timing-function: linear;
+			z-index: 999;
+			left: 0;
 			top: 100%;
 		}
+		
+		.flash {
+			background: linear-gradient(0deg, rgba(255, 0, 0, 1) 0%,
+										rgba(0, 0, 0, 0) 100%);
+			height: 100%;
+			opacity: 0;
+			animation-name: flash;
+			animation-timing-function: ease-in-out;
+			animation-duration: 1s;
+		}
+		
 		@keyframes move {
 			from {
 				top: 0%;
@@ -46,6 +61,15 @@
 				top: 100%;
 			}
 		}
+		@keyframes flash {
+			from {
+				opacity: 100%;
+			}
+			
+			to {
+				opacity: 0;
+			}
+		}
 	</style>
 </head>
 <body onload="fitText(document.getElementById('infobox')); fitText(document.getElementById('buttonReal'), 0.2)">
@@ -53,25 +77,27 @@
         <div id="game" style="width: 40%;height: 100%; text-align: center; position: relative;">
             <div id="nuotit" style="height: 80%; display: flex;">
 				<!-- Nuotit lisätään automaattisesti -->
-				<div style="width: 25%; height: 100%; position: relative;">
-					<div class="row" id="row0">
-					</div>
+				<div style="width: 25%; height: 100%; position: relative;"
+					 class="row">
+					<div class="flash"></div>
 				</div>
-				<div style="width: 25%; height: 100%; position: relative;">
-					<div class="row" id="row1">
-					</div>
+				<div style="width: 25%; height: 100%; position: relative;"
+					 class="row">
+						<!-- <img src="https://yt3.googleusercontent.com/naSWpcgomqi8vovD20lUcbN_a-2R2iBpVtS4ozroGqTYMY9Gwba4LfMBX0EMaY3wI9N6EQzBw4XMjrie=w544-h544-s-l90-rj">
+						-->
+						<div class="flash"></div>
 				</div>
-				<div style="width: 25%; height: 100%; position: relative;">
-					<div class="row" id="row2">
-					</div>
+				<div style="width: 25%; height: 100%; position: relative;"
+					 class="row">
+					<div class="flash"></div>
 				</div>
-				<div style="width: 25%; height: 100%; position: relative;">
-					<div class="row" id="row3">
-					</div>
+				<div style="width: 25%; height: 100%; position: relative;"
+					 class="row">
+					<div class="flash"></div>
 				</div>
             </div>
             <div style="height: 20%; width: 100%; position: relative;">
-                <div id="ohjaimet" style="height: 50%; width: 100%; bottom: 20%; position: absolute;">
+                <div id="ohjaimet" class="controls">
 					<button class="control" id="0">1</button><button class="control" id="1">2</button><button class="control" id="2">3</button><button class="control" id="3">4</button>
                 </div>
             </div>

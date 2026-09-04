@@ -8,10 +8,17 @@ const ranks  = ["D", "D+", "C", "C+", "B", "B+", "A", "A+", "S", "S+", "SS"]
 // Song settings
 const speedMultiplier = 1.35;
 let nightcore = 0;
-const songDelay = 1.0 // how long to wait until starting playback of the music
 let volume = 1;
+// How long it takes for a note to go from the top to the bottom
+const noteSpeed = 1;
 // Elements
-const noteRows = document.querySelectorAll(".row");
+const rowDivs = document.querySelectorAll(".row");
+const flashDivs = document.querySelectorAll(".flash");
+let noteDivs = [];
+// Time when song started
+let startTime;
+// Which row notes are on
+let noteRows = [];
 
 function start()
 {
@@ -27,11 +34,69 @@ function start()
 				(btn) => {
 						fitText(btn, 0.2)
 				});
-		playSong();
+		startTime = Date.now();
 		createNotes();
+		// It takes some time for the initial notes to hit
+		setTimeout(playSong, noteSpeed*1000);
 }
 
-function Arvosana(prosentti, plusMode)
+function createNote(row)
+{
+		const div = document.createElement("img");
+		div.src = "https://upload.wikimedia.org/wikipedia/commons/6/63/Star%2A.svg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original";
+		div.style.animationDuration = `${noteSpeed}s`;
+		setTimeout(()=>{div.remove();}, noteSpeed*1000);
+		noteDivs.push(div);
+		rowDivs[row].appendChild(div);
+		fitText(div, 0.01);
+}
+
+function pressed(btn)
+{
+		const elapsedf = (Date.now() - startTime)/speedMultiplier;
+		const elapsed = (Date.now() - startTime - (noteSpeed*1000))/speedMultiplier;
+		// Index of first note onscreen
+		let first = 0;
+		for (;;first++) {
+				if (noteStarts[first] > (elapsed)
+						|| first > noteStarts.length) {
+						break;
+				} 
+		}
+		// Index of last note onscreen
+		let last = first;
+		for (;;last++) {
+				if (noteStarts[last] > (elapsedf)
+						|| last > noteStarts.length) {
+						break;
+				} 
+		}
+		for (let index = first; index < last; index++) {
+				if (noteRows[index] == btn && noteDivs[index].parentElement != null) {
+						console.log(noteRows[index]);
+						noteDivs[index].remove();
+						flashDivs[btn].classList.remove("flash");
+						setTimeout(()=>{flashDivs[btn].classList.add("flash");}, 50);
+						console.log(`Off by : ${Math.abs(noteStarts[index] - elapsed)}`);
+						break;
+				}
+		}
+}
+
+// Keyboard input
+document.addEventListener('keydown', function(event) {
+		if(event.keyCode == 68 || event.keyCode == 49) { // D
+				pressed(0);
+		} else if(event.keyCode == 70 || event.keyCode == 50) { // F
+				pressed(1);
+		} else if (event.keyCode == 74 || event.keyCode == 51) { // J
+				pressed(2);
+		} else if (event.keyCode == 75 || event.keyCode == 52) { // K
+				pressed(3);
+		}
+});
+
+function pRank(prosentti, plusMode)
 {
 		if (prosentti == 100)
 				return 10
@@ -57,33 +122,17 @@ function Arvosana(prosentti, plusMode)
 				return 0
 }
 
-// Keyboard input
-document.addEventListener('keydown', function(event) {
-		if(event.keyCode == 68 || event.keyCode == 49) { // D
-
-		} else if(event.keyCode == 70 || event.keyCode == 50) { // F
-
-		} else if (event.keyCode == 74 || event.keyCode == 51) { // J
-
-		} else if (event.keyCode == 75 || event.keyCode == 52) { // K
-
-		}
-});
-
-function createNote()
-{
-		const div = document.createElement("img");	
-		div.src = "https://upload.wikimedia.org/wikipedia/commons/6/63/Star%2A.svg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original";
-		div.style.animationDuration = "3s";
-		setTimeout(()=>{div.remove();}, 3000);
-		noteRows[0].appendChild(div);
-		fitText(div, 0.01);
-}
-
 function createNotes()
 {
+		row = 0;
 		for (let i = 0; i < notes.length; i++) {
-				setTimeout(createNote, noteStarts[i]);
+				// Crop low notes
+				if (notes[i] > 30) {
+						// const row = Math.floor(Math.random()*4);
+						row = (row + 1) % 4;
+						noteRows.push(row);
+						setTimeout(createNote.bind(this, row), noteStarts[i] * speedMultiplier);
+				}
 		}
 }
 
@@ -92,16 +141,13 @@ function playSong()
 		// if you have another AudioContext class use that one, as some browsers have a limit
 		let audioCtx = new (window.AudioContext || window.webkitAudioContext || window.audioContext);
 
-		// All arguments are optional:
-
 		// duration of the tone in milliseconds. Default is 500
 		// frequency of the tone in hertz. default is 440
 		// volume of the tone. Default is 1, off is 0.
 		// type of tone. Possible values are sine, square, sawtooth, triangle, and custom. Default is sine.
 		// callback to use on end of tone
-		function beep(time, duration, frequency, volume, type, callback) {
-				
-				// Seconds to milliseconds
+		function beep(time, duration, frequency, volume, type, callback)
+		{
 				time /= 1000
 				duration /= 1000
 
@@ -111,10 +157,10 @@ function playSong()
 				oscillator.connect(gainNode);
 				gainNode.connect(audioCtx.destination);
 				
-				if (volume){gainNode.gain.value = volume;}
-				if (frequency){oscillator.frequency.value = frequency;}
-				if (type){oscillator.type = type;}
-				if (callback){oscillator.onended = callback;}
+				gainNode.gain.value = volume;
+				oscillator.frequency.value = frequency;
+				oscillator.type = type;
+				oscillator.onended = callback;
 				
 				gainNode.gain.exponentialRampToValueAtTime(
 						volume, time + 1 // Take 1 "unit of time" to get to full volume, I think? Added this comments months after writing the code
@@ -123,8 +169,8 @@ function playSong()
 						0.000001, time + duration + 10 // Kind of arbitrary, I don't really know how this works and I have no idea what 10 does, it just sounds kinda good lol
 				)
 
-				oscillator.start(time + songDelay);
-				oscillator.stop(time + duration + songDelay);
+				oscillator.start(time);
+				oscillator.stop(time + duration);
 		};
 
 		for (let i = 0; i < noteStarts.length; i++)
@@ -137,7 +183,4 @@ function playSong()
 		}
 }
 
-function MidiToFrequency(MidiNumber)
-{
-		return (Math.pow(2, (MidiNumber - 69) / 12.0) * 440);
-}
+MidiToFrequency = (MidiNumber) => (Math.pow(2, (MidiNumber - 69) / 12.0) * 440);
