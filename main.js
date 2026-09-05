@@ -10,7 +10,7 @@ let score = 0;
 // Theoretical max score which could be achieved by the current point in time
 let maxScore = 0;
 // Song settings
-const speedMultiplier = 1.35;
+let speedMultiplier = 1;
 let nightcore = 0;
 let volume = 1;
 // How long it takes for a note to go from the top to the bottom
@@ -32,6 +32,7 @@ function start()
 				volume = 0.00001; // oscillator moment
 		}
 		nightcore = document.getElementById("pitch").value;
+		speedMultiplier = document.getElementById("speed").value;
 		document.getElementById("settings").innerHTML = "" // Delete settings
 		// Buttons fit text
 		document.querySelectorAll("control").forEach(
@@ -46,8 +47,8 @@ function start()
 
 function pressed(btn)
 {
-		const elapsed = (Date.now() - startTime)/speedMultiplier;
-		const elapsedf = ((Date.now() - startTime - (noteSpeed*1000))/speedMultiplier);
+		const elapsed = (Date.now() - startTime)*speedMultiplier;
+		const elapsedf = ((Date.now() - startTime - (noteSpeed*1000))*speedMultiplier);
 		// Index of first note onscreen
 		let first = 0;
 		for (;;first++) {
@@ -128,7 +129,7 @@ function createNotes()
 				if (notes[i] > 30) {
 						// const row = Math.floor(Math.random()*4);
 						noteRows.push(row);
-						setTimeout(createNote.bind(this, row), noteStarts[i] * speedMultiplier);
+						setTimeout(createNote.bind(this, row), noteStarts[i] / speedMultiplier);
 						row = (row + 1) % 4;
 				}
 		}
@@ -170,7 +171,7 @@ function playSong()
 		// volume of the tone. Default is 1, off is 0.
 		// type of tone. Possible values are sine, square, sawtooth, triangle, and custom. Default is sine.
 		// callback to use on end of tone
-		function beep(time, duration, frequency, volume, type, callback)
+		function beep(time, duration, frequency, volume, type)
 		{
 				time /= 1000
 				duration /= 1000
@@ -184,7 +185,6 @@ function playSong()
 				gainNode.gain.value = volume;
 				oscillator.frequency.value = frequency;
 				oscillator.type = type;
-				oscillator.onended = callback;
 				
 				gainNode.gain.exponentialRampToValueAtTime(
 						volume, time + 1 // Take 1 "unit of time" to get to full volume, I think? Added this comments months after writing the code
@@ -199,8 +199,8 @@ function playSong()
 
 		for (let i = 0; i < noteStarts.length; i++)
 		{
-				beep(noteStarts[i] * speedMultiplier,
-						 noteLengths[i] * speedMultiplier,
+				beep(noteStarts[i] / speedMultiplier,
+						 noteLengths[i] / speedMultiplier,
 						 MidiToFrequency(notes[i]-nightcore),
 						 volume, "triangle"
 						)
