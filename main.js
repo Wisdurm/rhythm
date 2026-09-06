@@ -5,6 +5,7 @@ const noteStarts = [0,0,192,384,384,384,576,960,960,1344,1728,1728,2112,2304,230
 // Points
 const värit = ["red", "orange", "yellow", "green", "blue", "purple"]
 const ranks  = ["D", "D+", "C", "C+", "B", "B+", "A", "A+", "S", "S+", "SS"]
+const missValue = 5;
 // 1 note = 10 points at max accuracy, 0 points at minimum accuracy + 5 points simply for hitting it
 let score = 0;
 // Theoretical max score which could be achieved by the current point in time
@@ -13,8 +14,10 @@ let maxScore = 0;
 let speedMultiplier = 1;
 let nightcore = 0;
 let volume = 1;
-// How long it takes for a note to go from the top to the bottom
-const noteSpeed = 1;
+// How long it takes for a note to go from the top to the button
+const noteSpeed = 1.1;
+// Extra time after reaching the button before deletion
+const grace = 0.1;
 // Elements
 const rowDivs = document.querySelectorAll(".row");
 const flashDivs = document.querySelectorAll(".flash");
@@ -34,13 +37,14 @@ function start()
 		startTime = Date.now();
 		createNotes();
 		// It takes some time for the initial notes to hit
-		setTimeout(playSong, noteSpeed*1000);
+		setTimeout(playSong, (noteSpeed-grace)*1000);
 }
 
 function pressed(btn)
 {
 		const elapsed = (Date.now() - startTime)*speedMultiplier;
 		const elapsedf = ((Date.now() - startTime - (noteSpeed*1000))*speedMultiplier);
+		const elapsedOff = ((Date.now() - startTime - ((noteSpeed-grace)*1000))*speedMultiplier);
 		// Index of first note onscreen
 		let first = 0;
 		for (;;first++) {
@@ -60,9 +64,9 @@ function pressed(btn)
 						deleteNote(noteDivs[index]);
 						flashDivs[btn].classList.remove("flash");
 						setTimeout(()=>{flashDivs[btn].classList.add("flash");}, 50);
-						const off = Math.abs(noteStarts[index] - elapsedf);
-						const s = ((noteSpeed*1000) - off)/100;
-						score += s + 5;
+						const off = Math.abs(noteStarts[index] - elapsedOff);
+						const s = (((noteSpeed-grace)*1000) - off)/100;
+						score += s + missValue;
 						updateBoard();
 						break;
 				}
@@ -107,7 +111,7 @@ function createNote(row)
 
 function deleteNote(div)
 {
-		maxScore += 15;
+		maxScore += 10 + missValue;
 		div.remove();		
 }
 
