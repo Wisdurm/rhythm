@@ -27,18 +27,10 @@ let noteRows = [];
 function start()
 {
 		// Get settings
-		volume = document.getElementById("volume").value;
-		if (volume == 0) {
-				volume = 0.00001; // oscillator moment
-		}
+		volume = Math.max(document.getElementById("volume").value, 0.00001); // oscillator moment
 		nightcore = document.getElementById("pitch").value;
 		speedMultiplier = document.getElementById("speed").value;
-		document.getElementById("settings").innerHTML = "" // Delete settings
-		// Buttons fit text
-		document.querySelectorAll("control").forEach(
-				(btn) => {
-						fitText(btn, 0.2)
-				});
+		document.getElementById("settings").remove();
 		startTime = Date.now();
 		createNotes();
 		// It takes some time for the initial notes to hit
@@ -52,16 +44,14 @@ function pressed(btn)
 		// Index of first note onscreen
 		let first = 0;
 		for (;;first++) {
-				if (noteStarts[first] > (elapsedf)
-						|| first > noteStarts.length) {
+				if (noteStarts[first] > (elapsedf) || first > noteStarts.length) {
 						break;
 				} 
 		}
 		// Index of last note onscreen
 		let last = first;
 		for (;;last++) {
-				if (noteStarts[last] > (elapsed)
-						|| last > noteStarts.length) {
+				if (noteStarts[last] > (elapsed) || last > noteStarts.length) {
 						break;
 				} 
 		}
@@ -81,7 +71,7 @@ function pressed(btn)
 
 // Keyboard input
 document.addEventListener('keydown', function(event) {
-		if(event.keyCode == 68 || event.keyCode == 49) { // D
+		if (event.keyCode == 68 || event.keyCode == 49) { // D
 				pressed(0);
 		} else if(event.keyCode == 70 || event.keyCode == 50) { // F
 				pressed(1);
@@ -102,6 +92,7 @@ function createNote(row)
 {
 		const div = document.createElement("img");
 		div.src = "https://upload.wikimedia.org/wikipedia/commons/6/63/Star%2A.svg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original";
+		div.classList.add("note");
 		div.style.animationDuration = `${noteSpeed}s`;
 		setTimeout(()=>{
 				if (div.parentElement != null) {
@@ -112,7 +103,6 @@ function createNote(row)
 		}, noteSpeed*1000);
 		noteDivs.push(div);
 		rowDivs[row].appendChild(div);
-		fitText(div, 0.01);
 }
 
 function deleteNote(div)
@@ -165,46 +155,34 @@ function playSong()
 {
 		// if you have another AudioContext class use that one, as some browsers have a limit
 		let audioCtx = new (window.AudioContext || window.webkitAudioContext || window.audioContext);
+		MidiToFrequency = (MidiNumber) => (Math.pow(2, (MidiNumber - 69) / 12.0) * 440);
 
-		// duration of the tone in milliseconds. Default is 500
-		// frequency of the tone in hertz. default is 440
-		// volume of the tone. Default is 1, off is 0.
-		// type of tone. Possible values are sine, square, sawtooth, triangle, and custom. Default is sine.
-		// callback to use on end of tone
 		function beep(time, duration, frequency, volume, type)
 		{
-				time /= 1000
-				duration /= 1000
-
+				// Oscillator and gainNode
 				oscillator = audioCtx.createOscillator();
 				gainNode = audioCtx.createGain();
-				
 				oscillator.connect(gainNode);
 				gainNode.connect(audioCtx.destination);
-				
+				// Settings
 				gainNode.gain.value = volume;
 				oscillator.frequency.value = frequency;
+				// Possible values are sine, square, sawtooth, triangle, and custom.
 				oscillator.type = type;
-				
-				gainNode.gain.exponentialRampToValueAtTime(
-						volume, time + 1 // Take 1 "unit of time" to get to full volume, I think? Added this comments months after writing the code
-				)
-				gainNode.gain.exponentialRampToValueAtTime(
-						0.000001, time + duration + 10 // Kind of arbitrary, I don't really know how this works and I have no idea what 10 does, it just sounds kinda good lol
-				)
-
+				// Begin at max volume and fade out (a bit slowly) after
+				gainNode.gain.exponentialRampToValueAtTime(volume, time + 1);
+				gainNode.gain.exponentialRampToValueAtTime(0.000001, time + duration + 10);
+				// Actual note
 				oscillator.start(time);
 				oscillator.stop(time + duration);
 		};
 
 		for (let i = 0; i < noteStarts.length; i++)
 		{
-				beep(noteStarts[i] / speedMultiplier,
-						 noteLengths[i] / speedMultiplier,
+				beep(noteStarts[i] / speedMultiplier / 1000,
+						 noteLengths[i] / speedMultiplier / 1000,
 						 MidiToFrequency(notes[i]-nightcore),
 						 volume, "triangle"
-						)
+						);
 		}
 }
-
-MidiToFrequency = (MidiNumber) => (Math.pow(2, (MidiNumber - 69) / 12.0) * 440);
