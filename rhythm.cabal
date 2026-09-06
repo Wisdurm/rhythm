@@ -52,7 +52,7 @@ extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
 
 common warnings
-    ghc-options: -Wall
+    ghc-options: -Wall -threaded
 
 executable rhythm
     -- Import common warning flags.
@@ -62,13 +62,23 @@ executable rhythm
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules: Midi
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends: base ^>=4.18.2.1, midi ^>=0.2.2.6, event-list, mtl, containers
+    build-depends: base ^>=4.18.2.1
+                 , midi ^>=0.2.2.6
+                 , event-list
+                 , mtl
+                 , containers
+                 , warp ^>=3.4.15
+                 , wai ^>=3.2.5
+                 , bytestring ^>=0.11.5.3
+                 , http-types ^>=0.12.6
+                 , aeson
+                 , text
 
     -- Directories containing source files.
     hs-source-dirs:   app
