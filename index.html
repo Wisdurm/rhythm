@@ -44,6 +44,16 @@
 			top: 110%;
 		}
 		
+		@keyframes move {
+			from {
+				top: 0%;
+			}
+
+			to {
+				top: 110%;
+			}
+		}
+		
 		.flash {
 			background: linear-gradient(0deg, rgba(255, 180, 0, 1) 0%,
 										rgba(0, 0, 0, 0) 100%);
@@ -54,15 +64,6 @@
 			animation-duration: 1s;
 		}
 		
-		@keyframes move {
-			from {
-				top: 0%;
-			}
-
-			to {
-				top: 110%;
-			}
-		}
 		@keyframes flash {
 			from {
 				opacity: 100%;
@@ -70,6 +71,32 @@
 			
 			to {
 				opacity: 0;
+			}
+		}
+
+		.popup {
+			color: white;
+			position: absolute;
+			animation-name: popup;
+			animation-duration: 1s;
+			animation-timing-function: ease-out;
+			z-index: 9;
+			/* End */
+			opacity: 0;
+		}
+
+		@keyframes popup {
+			from {
+				opacity: 1;
+				left: 0;
+				bottom: 10px;
+			}
+
+			to {
+				left: -10px;
+				bottom: 50px;
+				opacity: 0;
+				transform: rotate(-15deg);
 			}
 		}
 	</style>
