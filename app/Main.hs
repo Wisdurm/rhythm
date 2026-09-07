@@ -1,13 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 module Main where
 
 import Network.HTTP.Types.Status (status200, status400)
-import Network.HTTP.Types.Method (methodGet)
+import Network.HTTP.Types.Method (methodGet, methodPost)
 import Network.Wai (Application, Request, Response,
-                    responseLBS, pathInfo, requestMethod)
+                    responseLBS, pathInfo, requestMethod,
+                    getRequestBodyChunk)
 import Network.Wai.Handler.Warp (run)
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Map as Map
+import GHC.Generics
+import Data.Aeson
 --import Midi (parseFile)
+
+data ParseMidi = ParseMidi { text :: String }
+  deriving (Generic, FromJSON)
 
 port :: Int
 port = 1234
@@ -15,19 +24,19 @@ port = 1234
 wrongMethod :: Response
 wrongMethod = responseLBS status400 [] "Wrong methods"
 
-servePath :: Request -> Response
-servePath req =
-  case pathInfo req of
-    ("api":"notes":_)
-      | requestMethod req == methodGet -> responseLBS status200 [] "Notes"
-      | otherwise -> wrongMethod
-    ("api":_) -> responseLBS status200 [] "Api"
-    _ -> responseLBS status200 [] "Unkown"
+parseData :: Request -> IO (Response)
+parseData req = do
+  c <- getRequestBodyChunk req
+  print c
+  return (responseLBS status200 [] (BL.fromStrict c))
 
 application :: Application
-application request respond = do
-  let response = servePath request
-  respond response
+application req res
+  | requestMethod req == methodPost =
+      case pathInfo req of
+        ("api":"notes":_) -> parseData req >>= res
+        _ -> res wrongMethod
+  | otherwise = res wrongMethod
 
 main :: IO ()
 main = do
