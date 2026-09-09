@@ -5,9 +5,9 @@ module Main where
 
 import Network.HTTP.Types.Status (status200, status400)
 import Network.HTTP.Types.Method (methodGet, methodPost)
+import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, Response,
-                    responseLBS, pathInfo, requestMethod,
-                    getRequestBodyChunk)
+                    responseLBS, pathInfo, requestMethod)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Parse (parseRequestBodyEx, lbsBackEnd,
                          defaultParseRequestBodyOptions,
@@ -22,17 +22,28 @@ import GHC.Generics
 import Data.Aeson
 import Midi (parseFile)
 
-data ParseMidi = ParseMidi { text :: String }
-  deriving (Generic, FromJSON)
+data ParsedMidi = ParsedMidi
+                  { name :: String,
+                    notes :: [Int],
+                    noteLengths :: [Int],
+                    noteStarts :: [Int] }
+  deriving (Generic, ToJSON)
 
 port :: Int
 port = 1234
 
 wrongMethod :: Response
-wrongMethod = responseLBS status400 [] "Wrong methods"
+wrongMethod = responseLBS status400 [] "Wrong method"
 
 wrongInput :: Response
 wrongInput = responseLBS status400 [] "Wrong input"
+
+brokenInput :: Response
+brokenInput = responseLBS status400 [] "Broken midi file"
+
+responseJSON :: ToJSON a => a -> Response
+responseJSON json = responseLBS status200 [(hContentType, "application/json")]
+               (encode json)
 
 parseData :: Request -> IO (Response)
 parseData req = do
@@ -41,12 +52,12 @@ parseData req = do
                               lbsBackEnd req)
        :: IO (Either RequestParseException ([Param], [File BL.ByteString]))
   case r of
-    Right (_,((_,file):_)) -> do
+    Right (_,((_,file):_)) ->
       if (fileContentType file) == "audio/midi" then do
         let midi = parseFile . fileContent $ file
-        case midi of Nothing -> return wrongInput
-                     Just m -> return (responseLBS status200 []
-                                        (BL.fromStrict (encodeUtf8( T.pack( show  m)))))
+        case midi of Just (ns, nls, nss) ->
+                       return . responseJSON $ (ParsedMidi "moi" ns nls nss)
+                     Nothing -> return brokenInput
         else return wrongInput
     Left ex -> return wrongInput
     Right _ -> return wrongInput
