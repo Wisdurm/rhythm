@@ -7,7 +7,8 @@ import Network.HTTP.Types.Status (status200, status400)
 import Network.HTTP.Types.Method (methodGet, methodPost)
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, Response,
-                    responseLBS, pathInfo, requestMethod)
+                    responseLBS, pathInfo, requestMethod,
+                    responseFile)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Parse (parseRequestBodyEx, lbsBackEnd,
                          defaultParseRequestBodyOptions,
@@ -15,15 +16,13 @@ import Network.Wai.Parse (parseRequestBodyEx, lbsBackEnd,
                            fileContentType, fileContent)
 import Control.Exception (try)
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T (pack)
-import Data.Text.Encoding (encodeUtf8)
-import qualified Data.Map as Map
+import qualified Data.Text as T (unpack)
 import GHC.Generics
 import Data.Aeson
 import Midi (parseFile)
 
 data ParsedMidi = ParsedMidi
-                  { name :: String,
+                  { tempo :: Int,
                     notes :: [Int],
                     noteLengths :: [Int],
                     noteStarts :: [Int] }
@@ -55,18 +54,25 @@ parseData req = do
     Right (_,((_,file):_)) ->
       if (fileContentType file) == "audio/midi" then do
         let midi = parseFile . fileContent $ file
-        case midi of Just (ns, nls, nss) ->
-                       return . responseJSON $ (ParsedMidi "moi" ns nls nss)
+        case midi of Just (tempo, ns, nls, nss) ->
+                       return . responseJSON $ (ParsedMidi tempo ns nls nss)
                      Nothing -> return brokenInput
         else return wrongInput
-    Left ex -> return wrongInput
+    Left _ -> return wrongInput
     Right _ -> return wrongInput
 
 application :: Application
 application req res
   | requestMethod req == methodPost =
       case pathInfo req of
-        ("api":"notes":_) -> parseData req >>= res
+        ["api","notes"] -> parseData req >>= res
+        _ -> res wrongMethod
+  | requestMethod req == methodGet =
+      case pathInfo req of
+        [] -> res (responseFile status200 [] "static/index.html" Nothing)
+        -- Don't think (?) there's any path traversal risk here
+        ["static",file] -> res (responseFile status200 -- who cares about mime type
+                                 [] ("static/"++(T.unpack file)) Nothing)
         _ -> res wrongMethod
   | otherwise = res wrongMethod
 

@@ -80,6 +80,7 @@ executable rhythm
                  , http-types ^>=0.12.6
                  , aeson
                  , text
+                 , non-negative
 
     -- Directories containing source files.
     hs-source-dirs:   app

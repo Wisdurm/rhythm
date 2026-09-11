@@ -10,6 +10,7 @@ const missValue = 5;
 const noteValue = 10;
 // 1 note = 10 points at max accuracy, 0 points at minimum accuracy + 5 points simply for hitting it
 let score = 0;
+let combo = 0;
 // Theoretical max score which could be achieved by the current point in time
 let maxScore = 0;
 // Song settings
@@ -42,6 +43,8 @@ document.getElementById("uploadButton").addEventListener("click", async() => {
 				notes = json.notes;
 				noteLengths = json.noteLengths;
 				noteStarts = json.noteStarts;
+				const bpm = 60000000/json.tempo;
+				speedMultiplier = bpm/156.60015660015662;
 				document.getElementById("upload").classList.add("hidden");
 				document.getElementById("settings").classList.remove("hidden");
 		} catch (e) {
@@ -54,7 +57,7 @@ function start()
 		// Get settings
 		volume = Math.max(document.getElementById("volume").value, 0.00001); // oscillator moment
 		nightcore = document.getElementById("pitch").value;
-		speedMultiplier = document.getElementById("speed").value;
+		speedMultiplier *= document.getElementById("speed").value;
 		document.getElementById("settings").remove();
 		startTime = Date.now();
 		createNotes();
@@ -89,6 +92,7 @@ function pressed(btn)
 						const off = Math.abs(noteStarts[index] - elapsedOff);
 						const s = (((noteSpeed-grace)*1000) - off)/100;
 						const p = Math.min(0.013546907275*Math.exp(0.6682542033007*s),10)
+						combo++;
 						score += p + missValue;
 						updateBoard();
 						// Popup
@@ -128,6 +132,7 @@ function updateBoard()
 		document.getElementById("accuracy").textContent = `${percent.toFixed(2)} %`;
 		document.getElementById("rank").textContent = ranks[pRank(percent)];
 		document.getElementById("rank").style.color = colours[pRank(percent)];
+		document.getElementById("combo").textContent = combo
 }
 
 function createNote(row)
@@ -137,11 +142,11 @@ function createNote(row)
 		div.classList.add("note");
 		div.style.animationDuration = `${noteSpeed}s`;
 		setTimeout(()=>{
-				if (div.parentElement != null) {
-						console.log("Missed");
-						deleteNote(div);
-						updateBoard();
-				}
+				if (div.parentElement == null)
+						return
+				deleteNote(div);
+				combo = 0;
+				updateBoard();
 		}, noteSpeed*1000);
 		noteDivs.push(div);
 		rowDivs[row].appendChild(div);
@@ -155,15 +160,25 @@ function deleteNote(div)
 
 function createNotes()
 {
-		row = 0;
+		let row = 0;
+		let lastT = [];
 		for (let i = 0; i < notes.length; i++) {
-				// Crop low notes
-				if (notes[i] > 30) {
-						// const row = Math.floor(Math.random()*4);
-						noteRows.push(row);
-						setTimeout(createNote.bind(this, row), noteStarts[i] / speedMultiplier);
-						row = (row + 1) % 4;
-				}
+				//// Crop low notes
+				// if (notes[i] < 30)
+				// 		continue
+				// // Remove more than 4 duplicates
+				// if (lastT.length == 4)
+				// 		lastT.shift();
+				// lastT.push(noteStarts[i]);
+				// if (lastT.reduce((acc,x)=>acc+x,0) == (noteStarts[i]*4)
+				// 		&& lastT.length == 4) {
+				// 		console.log(lastT);
+				// 		continue;
+				// }
+				//const row = Math.floor(Math.random()*4);
+				noteRows.push(row);
+				setTimeout(createNote.bind(this, row), noteStarts[i] / speedMultiplier);
+				row = (row + 1) % 4;
 		}
 }
 
