@@ -35,7 +35,7 @@ document.getElementById("uploadButton").addEventListener("click", async() => {
 		const data = new FormData();
 		data.append('file', input.files[0]);
 		try {
-				const response = await fetch("http://localhost:1234/api/notes", {
+				const response = await fetch("/api/notes", {
 						method: "POST",
 						body: data
 				});
