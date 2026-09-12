@@ -3,7 +3,8 @@
 
 module Main where
 
-import Network.HTTP.Types.Status (status200, status400)
+import Network.HTTP.Types.Status (Status, status200,
+                                  status400, status404)
 import Network.HTTP.Types.Method (methodGet, methodPost)
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, Response,
@@ -16,7 +17,8 @@ import Network.Wai.Parse (parseRequestBodyEx, lbsBackEnd,
                            fileContentType, fileContent)
 import Control.Exception (try)
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T (unpack)
+import qualified Data.ByteString as B
+import qualified Data.Text as T (Text, unpack, takeWhileEnd)
 import GHC.Generics
 import Data.Aeson
 import Midi (parseFile)
@@ -26,22 +28,33 @@ data ParsedMidi = ParsedMidi
                     notes :: [Int],
                     noteLengths :: [Int],
                     noteStarts :: [Int] }
-  deriving (Generic, ToJSON)
+                deriving (Generic, ToJSON)
+
+data ErrorMidi = ErrorMidi
+                 { error :: String }
+               deriving (Generic, ToJSON)
 
 port :: Int
 port = 1234
 
-wrongMethod :: Response
-wrongMethod = responseLBS status400 [] "Wrong method"
+-- Safe because only using my own files
+getMime :: T.Text -> B.ByteString
+getMime file = case T.takeWhileEnd (/='.') file of
+                 "js" -> "application/javascript"
+                 "svg" -> "image/svg+xml"
+                 _ -> "kissa"
+
+unknownPath :: Response
+unknownPath = responseJSON status404 (ErrorMidi "Unknown path")
 
 wrongInput :: Response
-wrongInput = responseLBS status400 [] "Wrong input"
+wrongInput = responseJSON status400 (ErrorMidi "Wrong input")
 
 brokenInput :: Response
-brokenInput = responseLBS status400 [] "Broken midi file"
+brokenInput = responseJSON status400 (ErrorMidi "Broken midi file")
 
-responseJSON :: ToJSON a => a -> Response
-responseJSON json = responseLBS status200 [(hContentType, "application/json")]
+responseJSON :: ToJSON a => Status -> a -> Response
+responseJSON st json = responseLBS st [(hContentType, "application/json")]
                (encode json)
 
 parseData :: Request -> IO (Response)
@@ -55,26 +68,27 @@ parseData req = do
       if (fileContentType file) == "audio/midi" then do
         let midi = parseFile . fileContent $ file
         case midi of Just (tempo, ns, nls, nss) ->
-                       return . responseJSON $ (ParsedMidi tempo ns nls nss)
+                       return . responseJSON status200 $ (ParsedMidi tempo ns nls nss)
                      Nothing -> return brokenInput
         else return wrongInput
-    Left _ -> return wrongInput
     Right _ -> return wrongInput
+    Left _ -> return wrongInput
 
 application :: Application
 application req res
   | requestMethod req == methodPost =
       case pathInfo req of
         ["api","notes"] -> parseData req >>= res
-        _ -> res wrongMethod
+        _ -> res unknownPath
   | requestMethod req == methodGet =
       case pathInfo req of
         [] -> res (responseFile status200 [] "static/index.html" Nothing)
         -- Don't think (?) there's any path traversal risk here
         ["static",file] -> res (responseFile status200 -- who cares about mime type
-                                 [] ("static/"++(T.unpack file)) Nothing)
-        _ -> res wrongMethod
-  | otherwise = res wrongMethod
+                                 [(hContentType, getMime file)]
+                                 ("static/"++(T.unpack file)) Nothing)
+        _ -> res unknownPath
+  | otherwise = res unknownPath
 
 main :: IO ()
 main = do

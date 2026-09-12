@@ -40,6 +40,10 @@ document.getElementById("uploadButton").addEventListener("click", async() => {
 						body: data
 				});
 				const json = await response.json();
+				if (json.error) {
+						alert(json.error);
+						return;
+				}
 				notes = json.notes;
 				noteLengths = json.noteLengths;
 				noteStarts = json.noteStarts;
@@ -47,6 +51,7 @@ document.getElementById("uploadButton").addEventListener("click", async() => {
 				speedMultiplier = bpm/156.60015660015662;
 				document.getElementById("upload").classList.add("hidden");
 				document.getElementById("settings").classList.remove("hidden");
+			  fitText(document.getElementById('buttonReal'), 0.2)
 		} catch (e) {
 				console.error(e.message);
 		}
